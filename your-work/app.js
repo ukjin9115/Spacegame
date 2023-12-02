@@ -17,6 +17,9 @@ class EventEmitter {
 		}
 	}
 }
+// //EventEmitter 클래스는 이벤트를 관리하는 기본적인 이벤트 에미터를 구현합니다.
+// on 메서드는 특정 이벤트에 대한 리스너를 추가합니다.
+// emit 메서드는 특정 이벤트를 발생시키며, 등록된 모든 리스너에게 메시지를 전달합니다.
 
 // @ts-ignore
 class GameObject {
@@ -43,7 +46,9 @@ class GameObject {
 		};
 	}
 }
-
+// GameObject 클래스는 게임의 모든 객체의 기본이 되는 클래스입니다.
+// draw 메서드는 객체를 캔버스에 그립니다.
+// rectFromGameObject 메서드는 객체의 위치를 나타내는 사각형을 반환합니다.
 // @ts-ignore
 class Hero extends GameObject {
 	constructor(x, y) {
@@ -54,7 +59,7 @@ class Hero extends GameObject {
 		this.cooldown = 0;
 		this.life = 3;
 		this.points = 0;
-	}
+	} // ... (플레이어의 속성 및 메서드 정의)
 	fire() {
 		gameObjects.push(new Laser(this.x + 45, this.y - 10));
 		this.cooldown = 500;
@@ -67,7 +72,7 @@ class Hero extends GameObject {
 				}
 			}
 		}, 50);
-	}
+	}// ... (레이저 발사 및 쿨다운 관련 로직)
 	canFire() {
 		return this.cooldown === 0;
 	}
@@ -76,10 +81,10 @@ class Hero extends GameObject {
 		if (this.life === 0) {
 			this.dead = true;
 		}
-	}
+	} // ... (플레이어 생명력 감소 로직)
 	incrementPoints() {
 		this.points += 100;
-	}
+	}// ... (플레이어 점수 증가 로직)
 }
 
 // @ts-ignore
@@ -94,7 +99,7 @@ class Enemy extends GameObject {
 			} else {
 				console.log('Stopped at', this.y);
 				clearInterval(id);
-			}
+			} // ... (적의 속성 및 이동 로직 정의)
 		}, 300);
 	}
 }
@@ -113,9 +118,9 @@ class Laser extends GameObject {
 				clearInterval(id);
 			}
 		}, 100);
-	}
+	}// ... (레이저의 속성 및 이동 로직 정의)
 }
-
+// loadTexture: 이미지를 비동기적으로 로드하는 함수.
 function loadTexture(path) {
 	return new Promise((resolve) => {
 		const img = new Image();
@@ -129,6 +134,7 @@ function loadTexture(path) {
 function intersectRect(r1, r2) {
 	return !(r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
 }
+// intersectRect: 두 사각형이 교차하는지 여부를 확인하는 함수.
 
 const Messages = {
 	KEY_EVENT_UP: 'KEY_EVENT_UP',
@@ -139,6 +145,8 @@ const Messages = {
 	COLLISION_ENEMY_LASER: 'COLLISION_ENEMY_LASER',
 	COLLISION_ENEMY_HERO: 'COLLISION_ENEMY_HERO',
 };
+
+
 
 let heroImg,
 	enemyImg,
@@ -184,6 +192,7 @@ window.addEventListener('keyup', (evt) => {
 	}
 });
 
+//createEnemies: 초기에 적들을 생성하는 함수.
 function createEnemies() {
 	const MONSTER_TOTAL = 5;
 	const MONSTER_WIDTH = MONSTER_TOTAL * 98;
@@ -198,13 +207,14 @@ function createEnemies() {
 		}
 	}
 }
-
+//createHero: 초기에 플레이어를 생성하는 함수.
 function createHero() {
 	hero = new Hero(canvas.width / 2 - 45, canvas.height - canvas.height / 4);
 	hero.img = heroImg;
 	gameObjects.push(hero);
 }
 
+//updateGameObjects: 게임 객체들을 업데이트하고 충돌을 확인하는 함수.
 function updateGameObjects() {
 	const enemies = gameObjects.filter((go) => go.type === 'Enemy');
 	const lasers = gameObjects.filter((go) => go.type === 'Laser');
@@ -232,10 +242,14 @@ function updateGameObjects() {
 	gameObjects = gameObjects.filter((go) => !go.dead);
 }
 
+
+//drawGameObjects: 캔버스에 게임 객체들을 그리는 함수.
 function drawGameObjects(ctx) {
 	gameObjects.forEach((go) => go.draw(ctx));
 }
 
+//
+//initGame: 게임 초기화 함수.
 function initGame() {
 	gameObjects = [];
 	createEnemies();
@@ -276,6 +290,8 @@ function initGame() {
 	});
 }
 
+
+//drawLife 및 drawPoints: 생명력과 점수를 화면에 표시하는 함수들.
 function drawLife() {
 	// TODO, 35, 27
 	//
@@ -297,6 +313,7 @@ function drawText(message, x, y) {
 	ctx.fillText(message, x, y);
 }
 
+//window.onload: 페이지 로딩이 완료되면 초기화 함수 호출 및 게임 루프 설정.
 window.onload = async () => {
 	canvas = document.getElementById('canvas');
 	// @ts-ignore
