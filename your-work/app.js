@@ -157,39 +157,63 @@ let heroImg,
 	gameObjects = [],
 	hero,
 	eventEmitter = new EventEmitter();
-
+// @ts-ignore
+let isMovingUp = false;
+let isMovingDown = false;
+let isMovingLeft = false;
+let isMovingRight = false;
+let isFiring = false;
+let fireInterval;
 // EVENTS
 // @ts-ignore
 let onKeyDown = function (e) {
 	// console.log(e.keyCode);
 	switch (e.keyCode) {
-		case 37:
-		case 39:
-		case 38:
-		case 40: // Arrow keys
-		case 32:
-			e.preventDefault();
-			break; // Space
+		case 37: // Left arrow key
+			isMovingLeft = true;
+			break;
+		case 39: // Right arrow key
+			isMovingRight = true;
+			break;
+		case 38: // Up arrow key
+			isMovingUp = true;
+			break;
+		case 40: // Down arrow key
+			isMovingDown = true;
+			break;
+		case 32: // Space key
+            e.preventDefault();
+            if (!isFiring) {
+                isFiring = true;
+                fireInterval = setInterval(() => {
+                    eventEmitter.emit(Messages.KEY_EVENT_SPACE);
+                }, 20); // 발사 간격 조절 (100ms)
+            }
+            break;
 		default:
 			break; // do not block other keys
 	}
 };
-
 window.addEventListener('keydown', onKeyDown);
 
 // TODO make message driven
 window.addEventListener('keyup', (evt) => {
 	if (evt.key === 'ArrowUp') {
+		isMovingUp = false;
 		eventEmitter.emit(Messages.KEY_EVENT_UP);
 	} else if (evt.key === 'ArrowDown') {
+		isMovingDown = false;
 		eventEmitter.emit(Messages.KEY_EVENT_DOWN);
 	} else if (evt.key === 'ArrowLeft') {
+		isMovingLeft = false;
 		eventEmitter.emit(Messages.KEY_EVENT_LEFT);
 	} else if (evt.key === 'ArrowRight') {
+		isMovingRight = false;
 		eventEmitter.emit(Messages.KEY_EVENT_RIGHT);
 	} else if (evt.keyCode === 32) {
-		eventEmitter.emit(Messages.KEY_EVENT_SPACE);
-	}
+        isFiring = false;
+        clearInterval(fireInterval);
+    } 
 });
 
 //createEnemies: 초기에 적들을 생성하는 함수.
@@ -226,6 +250,7 @@ function updateGameObjects() {
 			eventEmitter.emit(Messages.COLLISION_ENEMY_HERO, { enemy });
 		}
 	});
+
 	// laser hit something
 	lasers.forEach((l) => {
 		enemies.forEach((m) => {
@@ -238,6 +263,11 @@ function updateGameObjects() {
 			}
 		});
 	});
+	// 이 부분에서 상태에 따라 움직임을 처리합니다.
+	if (isMovingUp) hero.y -= 10;
+	if (isMovingDown) hero.y += 10;
+	if (isMovingLeft) hero.x -= 10;
+	if (isMovingRight) hero.x += 10;
 
 	gameObjects = gameObjects.filter((go) => !go.dead);
 }
@@ -256,26 +286,25 @@ function initGame() {
 	createHero();
 
 	eventEmitter.on(Messages.KEY_EVENT_UP, () => {
-		hero.y -= 5;
+		if (isMovingUp) hero.y -= 5;
 	});
 
 	eventEmitter.on(Messages.KEY_EVENT_DOWN, () => {
-		hero.y += 5;
+		if (isMovingDown) hero.y += 5;
 	});
 
 	eventEmitter.on(Messages.KEY_EVENT_LEFT, () => {
-		hero.x -= 20;
+		if (isMovingLeft) hero.x -= 20;
 	});
 
 	eventEmitter.on(Messages.KEY_EVENT_RIGHT, () => {
-		hero.x += 20;
+		if (isMovingRight) hero.x += 20;
 	});
 
 	eventEmitter.on(Messages.KEY_EVENT_SPACE, () => {
 		if (hero.canFire()) {
 			hero.fire();
 		}
-		// console.log('cant fire - cooling down')
 	});
 
 	eventEmitter.on(Messages.COLLISION_ENEMY_LASER, (_, { first, second }) => {
@@ -314,24 +343,40 @@ function drawText(message, x, y) {
 }
 
 //window.onload: 페이지 로딩이 완료되면 초기화 함수 호출 및 게임 루프 설정.
-window.onload = async () => {
-	canvas = document.getElementById('canvas');
-	// @ts-ignore
-	ctx = canvas.getContext('2d');
-	heroImg = await loadTexture('assets/player.png');
-	enemyImg = await loadTexture('assets/enemyShip.png');
-	laserImg = await loadTexture('assets/laserRed.png');
-	lifeImg = await loadTexture('assets/life.png');
+// ...
 
-	initGame();
-	// @ts-ignore
-	let gameLoopId = setInterval(() => {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = 'black';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		drawPoints();
-		drawLife();
-		updateGameObjects();
-		drawGameObjects(ctx);
-	}, 100);
+//window.onload: 페이지 로딩이 완료되면 초기화 함수 호출 및 게임 루프 설정.
+window.onload = async () => {
+    canvas = document.getElementById('canvas');
+    // @ts-ignore
+    ctx = canvas.getContext('2d');
+    heroImg = await loadTexture('assets/player.png');
+    enemyImg = await loadTexture('assets/enemyShip.png');
+    laserImg = await loadTexture('assets/laserRed.png');
+    lifeImg = await loadTexture('assets/life.png');
+
+    initGame();
+
+    // @ts-ignore
+    let lastTimestamp = 0;
+
+    function gameLoop(timestamp) {
+        const deltaTime = timestamp - lastTimestamp;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawPoints();
+        drawLife();
+        updateGameObjects();
+        drawGameObjects(ctx);
+
+        lastTimestamp = timestamp;
+
+        // @ts-ignore
+        requestAnimationFrame(gameLoop);
+    }
+
+    // @ts-ignore
+    requestAnimationFrame(gameLoop);
 };
